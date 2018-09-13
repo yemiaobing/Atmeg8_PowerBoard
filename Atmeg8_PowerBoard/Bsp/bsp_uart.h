@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define UART_TX_BY_INTERRUPT /* 使用发送中断，否则使用while(1)发送 */
+//#define UART_TX_BY_INTERRUPT /* 使用发送中断，否则使用while(1)发送 */
 
 /* 发送接收缓冲区大小定义 */
 #if defined (UART_TX_BY_INTERRUPT)

@@ -2,6 +2,9 @@
 #define POWER_MANAGEMENT_H_
 
 #include <avr/io.h>
+#include <stdint.h>
+#include "../Bsp/eeprom.h"
+#include "../Bsp/adc.h"
 
 #define PIN1_INPUT_VALUE ((PIND & (1 << PIND3)) > 0)	/* 检测开关机按钮 */
 
@@ -12,32 +15,43 @@
 
 #define PIN28_OUTPUT_HIGH() {PORTC |= 1 << PC5;}    /* 输出脉冲 */
 #define PIN28_OUTPUT_LOW() {PORTC &= ~(1 << PC5);}   
-	
-#define LONG_KEY_TIME	6000 //6s 按键长按时间
 
-#define SHAKING_TIME    20  //unit:ms 用于按键消抖
+#define V_BAT_ADC_CHANNEL	ADC7_CHANNEL
+#define V_IN_ADC_CHANNEL	ADC6_CHANNEL
 
-typedef enum
+#define DEFAULT_BATTERY_FULL_VOL	12600	//unit:mv
+#define DEFAULT_BATTERY_LOW_VOL	9000	//unit:mv
+
+#define DEFAULT_INTERNAL_REFERENCE_VOL	2500 //unit:mv
+
+#define BATTERY_SAMPLE_INTERVAL 2000  //unit: ms
+
+#define MINIMUM_CHARGING_VOLTAGE 11000
+
+#define BAT_MANAGENT_EEPROM_ADDR EEPROM_START_ADDR
+
+#define MAX_CHECK_LOW_POWER_DEBOUNCE_CNT	3
+
+typedef struct
 {
-	POWER_ON_DETECT = 0,
-	POWER_ON_WAIT_2_SECONDS,
-	POWER_ON_OUTPUT_20MS_PULSE,
-	NORMAL_WORK,
-	POWER_OFF_DETECT,
-	POWER_OFF_OUTPUT_20MS_PULSE,
-	POWER_OFF_WAIT_MAIN_BOARD_OFF,
-	FORCE_SHUTDOWN_DETECT,
-	FORCE_SHUTDOWN_OUTPUT_6S_PULSE
-}DEVICE_STATE_E;
-
-typedef enum
-{
-	DETECT_NO_KEY_PRESSED,
-	DETECT_KEY_PRESSED,
-	DETECT_KEY_LONG_PRESSED
-}KEY_STATE_T;
+	uint16_t bat_full_vol;
+	uint16_t bat_low_vol;
+	uint16_t internal_refer_vol;
+	uint8_t internal_vol_div_resistor1;
+	uint8_t internal_vol_div_resistor2;
+}Bat_managent_t;
 
 extern void power_pin_init(void);
-extern void device_state_manage(void);
-
+extern void power_on(void);
+extern void key_scan(void);
+extern void battery_init(void);
+extern void battery_voltage_sample_process(void);
+extern void battery_read_voltage(void);
+extern uint16_t battery_get_cur_bat_voltage(void);
+extern uint16_t battery_get_cur_charge_voltage(void);
+extern uint16_t battery_get_full_voltage(void);
+extern uint16_t battery_get_low_voltage(void);
+extern uint8_t battery_get_percentage(void);
+extern int8_t battery_set_bat_managent(Bat_managent_t *bat_m);
+extern void need_enter_power_off_status(void);
 #endif /* POWER_MANAGEMENT_H_ */

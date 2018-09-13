@@ -1,6 +1,8 @@
 #ifndef CMD_H_
 #define CMD_H_
 
+#include "../Bsp/eeprom.h"
+
 #define CMD_HEAD1 0xAA
 #define CMD_HEAD2 0xFF
 
@@ -13,6 +15,10 @@
 #define SET_BAT_PARA_CMD	0x1002
 #define CONTROL_LED_CMD		0x1003
 #define GET_BAT_POWER_CMD	0x1004
+
+#define MSG_BAT_INFO_LENGTH	22
+#define MSG_BAT_POWER_LENGTH 7
+#define MSG_SET_BAT_REPLY_LENGTH	6
 
 typedef enum
 {

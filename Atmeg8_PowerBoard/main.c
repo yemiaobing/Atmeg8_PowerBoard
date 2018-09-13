@@ -11,22 +11,20 @@ int main(void)
 {
 	uart_init(4800);
 	timer1_init();
-	adc_init();
+	battery_init();
 	power_pin_init();
-	
 	sei();
-	uint32_t pre_time = 0;
-
+	
+	power_on();
+	
+	need_enter_power_off_status();
+	
+	_delay_ms(5000);	//延时等待主板上电
     while (1) 
     {
 		cmd_receive();
-		device_state_manage();
-		
-		if (millis() - pre_time >= 2000)
-		{
-			pre_time = millis();
-			uart_send_byte('A');
-		}
+		key_scan();
+		battery_voltage_sample_process();
     }
 }
 

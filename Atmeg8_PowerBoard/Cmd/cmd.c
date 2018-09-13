@@ -2,7 +2,89 @@
 #include "../Bsp/bsp_uart.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../Bsp/eeprom.h"
+#include "../Power_management/power_management.h"
+
+static void get_all_bat_info_cmd_exec(void)
+{
+	uint8_t buf[MSG_BAT_INFO_LENGTH] = {0};
+	uint8_t i = 0;
+	
+	/* head */
+	buf[i++] = 0xAA;
+	buf[i++] = 0xFF;
+	buf[i++] = 0x01;
+	buf[i++] = 0x10;
+	/* content */
+	buf[i++] = battery_get_cur_bat_voltage();
+	buf[i++] = battery_get_cur_bat_voltage() >> 8;
+	buf[i++] = battery_get_cur_charge_voltage();
+	buf[i++] = battery_get_cur_charge_voltage() >> 8;
+	buf[i++] = battery_get_full_voltage();
+	buf[i++] = battery_get_full_voltage() >> 8;
+	buf[i++] = battery_get_low_voltage();
+	buf[i++] = battery_get_low_voltage() >> 8;
+	buf[i++] = battery_get_percentage();
+	/*reserver 7 bytes*/
+	buf[i++] = 0;
+	buf[i++] = 0;
+	buf[i++] = 0;
+	buf[i++] = 0;
+	buf[i++] = 0;
+	buf[i++] = 0;
+	buf[i++] = 0;
+	/* tail */
+	buf[i++] = 0x55;
+	buf[i++] = 0xFF;
+	
+	uart_send_buf(buf, MSG_BAT_INFO_LENGTH);
+}
+
+static void get_bat_power_cmd_exec(void)
+{
+	uint8_t buf[MSG_BAT_POWER_LENGTH] = {0};
+	uint8_t i = 0;
+	
+	/* head */
+	buf[i++] = 0xAA;
+	buf[i++] = 0xFF;
+	buf[i++] = 0x04;
+	buf[i++] = 0x10;
+	/* content */
+	buf[i++] = battery_get_percentage();
+	/* tail */
+	buf[i++] = 0x55;
+	buf[i++] = 0xFF;
+	
+	uart_send_buf(buf, MSG_BAT_POWER_LENGTH);
+}
+
+void set_bat_para_cmd_exec(uint8_t* cmd_buf)
+{
+	Bat_managent_t bat_m;
+	uint8_t buf[MSG_SET_BAT_REPLY_LENGTH] = {0};
+	uint8_t i = 0;
+	
+	bat_m.bat_full_vol = cmd_buf[4];
+	bat_m.bat_full_vol |= cmd_buf[5] << 8;
+	bat_m.bat_low_vol = cmd_buf[6];
+	bat_m.bat_low_vol |= cmd_buf[7] << 8;
+	bat_m.internal_refer_vol = cmd_buf[8];
+	bat_m.internal_refer_vol |= cmd_buf[9] << 8;
+	bat_m.internal_vol_div_resistor1 = cmd_buf[10];
+	bat_m.internal_vol_div_resistor2 = cmd_buf[11];
+	
+	/* head */
+	buf[i++] = 0xAA;
+	buf[i++] = 0xFF;
+	buf[i++] = 0x02;
+	buf[i++] = 0x10;
+	/* tail */
+	buf[i++] = 0x55;
+	buf[i++] = 0xFF;
+	
+	battery_set_bat_managent(&bat_m);
+	uart_send_buf(buf, MSG_SET_BAT_REPLY_LENGTH);
+}
 
 static uint8_t cmd_get_content_length(uint16_t cmd)
 {
@@ -40,34 +122,32 @@ static int8_t cmd_parse(uint8_t *cmd_string, uint8_t cmd_legnth, uint16_t cmd_ty
 	switch (cmd_type)
 	{
 		case GET_ALL_BAT_INFO_CMD:
-		{			
-			//uart_send_byte(eeprom_read(0));
-			//uart_send_buf("GET_ALL_BAT_INFO_CMD\n", strlen("GET_ALL_BAT_INFO_CMD"));
+		{	
+			get_all_bat_info_cmd_exec();
 			break;
 		}
 		
 		case SET_BAT_PARA_CMD:
 		{
-			//eeprom_write(0, 0x53);
-			//uart_send_buf("SET_BAT_PARA_CMD\n", strlen("SET_BAT_PARA_CMD"));
+			set_bat_para_cmd_exec(cmd_string);
 			break;
 		}
 		
+		#if 0
 		case CONTROL_LED_CMD:
 		{
-			uart_send_buf("CONTROL_LED_CMD\n", strlen("CONTROL_LED_CMD"));
 			break;
 		}
+		#endif
 		
 		case GET_BAT_POWER_CMD:
 		{
-			uart_send_buf("GET_BAT_POWER_CMD\n", strlen("GET_BAT_POWER_CMD"));
+			get_bat_power_cmd_exec();
 			break;
 		}
 		
 		default:
 		{
-			uart_send_buf("default\n", strlen("default"));
 			return -1;
 		}  
 	}
